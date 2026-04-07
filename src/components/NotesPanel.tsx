@@ -11,31 +11,24 @@ interface NotesPanelProps {
 }
 
 export default function NotesPanel({ startDate, endDate }: NotesPanelProps) {
+  // Step 1: State Management
   const [noteText, setNoteText] = useState('');
-  const [savedNotes, setSavedNotes] = useState<Record<string, string>>({});
   const [isClient, setIsClient] = useState(false);
   const [showSavedMsg, setShowSavedMsg] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    const stored = localStorage.getItem('calendarNotes');
-    if (stored) {
-      try {
-        setSavedNotes(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse notes');
-      }
-    }
   }, []);
 
-  const getDateKey = () => {
+  const getStorageKey = () => {
     if (!startDate) return null;
-    if (!endDate || isSameDay(startDate, endDate)) {
-      return format(startDate, 'yyyy-MM-dd');
+    
+    if (endDate && !isSameDay(startDate, endDate)) {
+      const d1 = isBefore(startDate, endDate) ? startDate : endDate;
+      const d2 = isBefore(startDate, endDate) ? endDate : startDate;
+      return `${format(d1, 'yyyy-MM-dd')}-${format(d2, 'yyyy-MM-dd')}`;
     }
-    const d1 = isBefore(startDate, endDate) ? startDate : endDate;
-    const d2 = isBefore(startDate, endDate) ? endDate : startDate;
-    return `${format(d1, 'yyyy-MM-dd')}_${format(d2, 'yyyy-MM-dd')}`;
+    return format(startDate, 'yyyy-MM-dd');
   };
 
   const getDisplayTitle = () => {
@@ -48,30 +41,33 @@ export default function NotesPanel({ startDate, endDate }: NotesPanelProps) {
     return `${format(d1, 'MMM d')} - ${format(d2, 'MMM d, yyyy')}`;
   };
 
-  const dateKey = getDateKey();
-  
+  const dateKey = getStorageKey();
+
+  // Step 5: Load Saved Notes
   useEffect(() => {
-    if (dateKey && savedNotes[dateKey]) {
-      setNoteText(savedNotes[dateKey]);
+    if (isClient && dateKey) {
+      const savedNote = localStorage.getItem(dateKey);
+      if (savedNote) {
+        setNoteText(savedNote);
+      } else {
+        setNoteText('');
+      }
     } else {
       setNoteText('');
     }
-    // Reset save msg dynamically when date switches
     setShowSavedMsg(false);
-  }, [dateKey, savedNotes]);
+  }, [dateKey, isClient]);
 
-  const handleSave = () => {
+  // Step 3: Implement Save Logic
+  const handleSaveNote = () => {
     if (!dateKey) return;
-    const updatedNotes = { ...savedNotes };
-    if (!noteText.trim()) {
-      delete updatedNotes[dateKey];
-    } else {
-      updatedNotes[dateKey] = noteText.trim();
-    }
-    setSavedNotes(updatedNotes);
-    localStorage.setItem('calendarNotes', JSON.stringify(updatedNotes));
     
-    // Trigger Save Confirmation
+    if (noteText.trim() === '') {
+      localStorage.removeItem(dateKey);
+    } else {
+      localStorage.setItem(dateKey, noteText);
+    }
+    
     setShowSavedMsg(true);
     setTimeout(() => setShowSavedMsg(false), 2000);
   };
@@ -99,6 +95,7 @@ export default function NotesPanel({ startDate, endDate }: NotesPanelProps) {
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           className="flex flex-col flex-1 gap-4"
         >
+          {/* Step 2: Fix Input Binding */}
           <textarea
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
@@ -106,10 +103,11 @@ export default function NotesPanel({ startDate, endDate }: NotesPanelProps) {
             className="flex-1 w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-xl border border-orange-200 dark:border-orange-800/50 p-5 focus:ring-4 focus:ring-orange-500/20 outline-none resize-none shadow-inner text-gray-800 dark:text-gray-100 transition-all font-medium leading-relaxed"
           />
           <div className="relative">
+            {/* Step 4: Attach Button Handler */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleSave}
+              onClick={handleSaveNote}
               className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
             >
               {showSavedMsg ? (
