@@ -5,6 +5,7 @@ import {
   endOfWeek, 
   eachDayOfInterval,
   isBefore,
+  isAfter,
   isWithinInterval,
   format,
   isSameDay
