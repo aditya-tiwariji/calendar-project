@@ -1,4 +1,4 @@
-import { isToday, isSameMonth, getDate, isSameDay, isWeekend } from 'date-fns';
+import { isSameMonth, getDate, isSameDay, isWeekend } from 'date-fns';
 import { getDaysInMonthGrid, isDateInRange } from '@/utils/dateUtils';
 import DayCell from './DayCell';
 
@@ -33,10 +33,10 @@ export default function CalendarGrid({ currentDate, startDate, endDate, onSelect
           const isWknd = isWeekend(day);
           
           return (
-            <div key={day.toISOString()} className={isCurrentMonth ? "" : "opacity-40 grayscale pointer-events-none"}>
+            <div key={day.toString()} className={isCurrentMonth ? "" : "opacity-40 grayscale pointer-events-none"}>
               <DayCell 
                 date={getDate(day)} 
-                isToday={isToday(day)} 
+                isToday={isSameDay(day, new Date())} 
                 isStart={isStart}
                 isEnd={isEnd}
                 isInRange={inRange && !isStart && !isEnd}
